@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 Cinemorphism Watch Party</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #fdf6f6;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #334155;
+        }
+
+        body.theme-sunset {
+            --bg-color: #fff7ed;
+            --card-bg: rgba(255, 237, 213, 0.95);
+            --text-color: #431407;
+        }
+
+        body.theme-mint {
+            --bg-color: #f0fdf4;
+            --card-bg: rgba(220, 252, 231, 0.95);
+            --text-color: #14532d;
+        }
+
+        body.theme-dark {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --text-color: #f8fafc;
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-card {
+            background-color: var(--card-bg);
+            transition: background-color 0.3s ease;
+        }
+
+        .floating-emoji {
+            position: absolute; bottom: 20px; font-size: 2.2rem;
+            animation: floatUp 2.2s ease-out forwards; pointer-events: none; z-index: 30;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-220px) scale(1.2); opacity: 0; }
+        }
+
+        /* Danmaku Flying Chat Text Animation */
+        .danmaku-text {
+            position: absolute;
+            white-space: nowrap;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 25;
+            animation: danmakuFly 7s linear forwards;
+        }
+        @keyframes danmakuFly {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-120%); }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden relative">
+
+    <!-- JOIN ROOM POPUP MODAL -->
+    <div id="join-modal" class="fixed inset-0 bg-rose-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-rose-100 flex flex-col gap-4 text-center">
+            <div class="text-4xl">🌸</div>
+            <h2 class="text-2xl font-bold text-rose-500">Join Cinemorphism</h2>
+            <p class="text-xs text-slate-500">Enter your nickname and the room code to sync up with friends!</p>
+            
+            <div class="flex flex-col gap-3 text-left">
+                <div>
+                    <label class="text-xs font-semibold text-rose-400">Username</label>
+                    <input type="text" id="modal-username" placeholder="e.g. Alex" class="w-full bg-rose-50/50 border border-rose-200 px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 mt-1 text-slate-700">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-purple-400">Room Code / Name</label>
+                    <input type="text" id="modal-room" placeholder="e.g. ROOM123" class="w-full bg-purple-50/50 border border-purple-200 px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 mt-1 font-mono text-slate-700">
+                </div>
+            </div>
+
+            <button onclick="submitJoinModal()" class="w-full bg-rose-400 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-md mt-2">Start Party ✨</button>
+        </div>
+    </div>
+
+    <!-- USER PROFILE CARD POPUP MODAL -->
+    <div id="user-profile-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-rose-100 flex flex-col items-center gap-3 text-center relative">
+            <button onclick="closeUserProfileModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            <div class="w-16 h-16 rounded-full bg-rose-100 text-rose-500 text-2xl flex items-center justify-center font-bold border-2 border-rose-200" id="profile-avatar">👤</div>
+            <div>
+                <h3 id="profile-username" class="text-lg font-bold text-slate-800">User Profile</h3>
+                <span id="profile-role" class="bg-purple-100 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Party Member</span>
+            </div>
+            <button onclick="sendWave()" class="w-full bg-rose-400 hover:bg-rose-500 text-white font-semibold py-2 rounded-xl text-xs transition mt-1 shadow-sm">
+                👋 Send Secret Wave
+            </button>
+        </div>
+    </div>
+    
+    <!-- TOP NAVBAR -->
+    <header class="bg-rose-100/80 backdrop-blur border-b border-rose-200 p-3 flex justify-between items-center shadow-sm z-10">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">✨</span>
+            <h1 class="text-xl font-bold text-rose-500 tracking-wide">Cinemorphism</h1>
+        </div>
+        
+        <div class="flex gap-2 items-center">
+            <!-- Theme Select Dropdown -->
+            <div class="flex items-center gap-1 bg-white/80 px-2 py-1 rounded-full border border-rose-200 text-xs font-semibold">
+                <span>🎨 Theme:</span>
+                <select id="theme-selector" onchange="changeTheme(this.value)" class="bg-transparent focus:outline-none text-rose-500 cursor-pointer font-bold">
+                    <option value="default">🌸 Rose Pastel</option>
+                    <option value="sunset">🌅 Sunset Glow</option>
+                    <option value="mint">🌿 Fresh Mint</option>
+                    <option value="dark">🌙 Dark Mode</option>
+                </select>
+            </div>
+
+            <!-- Copy Invite Link Button -->
+            <button onclick="copyInviteLink()" class="bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full transition shadow-sm flex items-center gap-1">
+                🔗 <span id="copy-btn-text">Copy Link</span>
+            </button>
+
+            <span id="active-user-badge" class="bg-rose-100 text-rose-600 text-xs font-semibold px-3 py-1 rounded-full border border-rose-200">User: -</span>
+            <span id="active-room-badge" class="bg-purple-100 text-purple-600 text-xs font-semibold px-3 py-1 rounded-full border border-purple-200">Room: -</span>
+            <button onclick="toggleDiagnostics()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-600 text-xs font-medium px-3 py-1.5 rounded-full border border-indigo-200 transition">📊 Diagnostics</button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden p-3 gap-3 relative">
+        
+        <!-- LEFT CHAT COLLAPSIBLE BUBBLE / POPUP -->
+        <div class="fixed left-4 bottom-6 z-40 flex flex-col items-start">
+            <!-- Floating Bubble Trigger -->
+            <button id="left-chat-bubble" onclick="toggleChat('left')" class="bg-rose-400 hover:bg-rose-500 text-white p-3.5 rounded-full shadow-lg border-2 border-white flex items-center gap-2 transition hover:scale-110">
+                <span class="text-xl">💬</span>
+                <span class="text-xs font-bold pr-1">Chat</span>
+                <span id="user-count" class="bg-white text-rose-500 font-bold px-2 py-0.5 rounded-full text-[10px] shadow-sm">0 online</span>
+            </button>
+
+            <!-- Floating Popup Window -->
+            <aside id="left-chat-panel" class="hidden w-80 h-96 theme-card rounded-3xl border-2 border-rose-200 shadow-2xl flex flex-col overflow-hidden absolute bottom-16 left-0">
+                <div class="bg-rose-100/90 p-3 border-b border-rose-200 text-xs font-bold text-rose-600 flex justify-between items-center">
+                    <span>💬 Party Chat</span>
+                    <button onclick="toggleChat('left')" class="text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
+                </div>
+                <div id="left-chat-messages" class="flex-1 p-3 overflow-y-auto text-xs space-y-2"></div>
+                <div class="p-2.5 bg-rose-50/80 border-t border-rose-100 flex gap-2">
+                    <input type="text" id="left-chat-input" placeholder="Say something..." class="bg-white border border-rose-200 px-3 py-1.5 rounded-xl text-xs w-full focus:outline-none focus:ring-2 focus:ring-rose-300 text-slate-700" onkeydown="if(event.key==='Enter') sendChat('left')">
+                    <button onclick="sendChat('left')" class="bg-rose-400 hover:bg-rose-500 text-white font-medium px-3 py-1.5 rounded-xl text-xs transition shadow-sm">Send</button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- CENTER CONTENT AREA -->
+        <main id="main-scroll-area" class="flex-1 flex flex-col gap-3 overflow-y-auto pr-1">
+            <div id="video-container" class="relative bg-slate-900 rounded-2xl overflow-hidden shadow-md aspect-video border-4 border-white flex items-center justify-center min-h-[300px]">
+                <video id="main-player" class="w-full h-full object-contain" controls playsinline src="https://vjs.zencdn.net/v/oceans.mp4">
+                    Your browser does not support HTML5 video.
+                </video>
+                <!-- Danmaku / Flying text container overlay -->
+                <div id="danmaku-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+                <!-- Emoji reaction container overlay -->
+                <div id="emoji-container" class="absolute inset-0 pointer-events-none"></div>
+            </div>
+
+            <div class="bg-purple-50/80 p-2.5 rounded-xl border border-purple-100 flex justify-between items-center shadow-sm">
+                <div class="flex gap-2">
+                    <button onclick="sendEmoji('🌸')" class="text-2xl hover:scale-125 transition">🌸</button>
+                    <button onclick="sendEmoji('💖')" class="text-2xl hover:scale-125 transition">💖</button>
+                    <button onclick="sendEmoji('✨')" class="text-2xl hover:scale-125 transition">✨</button>
+                    <button onclick="sendEmoji('🍿')" class="text-2xl hover:scale-125 transition">🍿</button>
+                    <button onclick="sendEmoji('🥳')" class="text-2xl hover:scale-125 transition">🥳</button>
+                </div>
+                <div class="text-[11px] text-purple-500 font-medium">Click emojis to react in real-time!</div>
+            </div>
+
+            <div id="diagnostics-panel" class="hidden bg-indigo-900 text-indigo-100 p-3 rounded-xl text-xs font-mono grid grid-cols-3 gap-2 shadow-inner">
+                <div>Ping Latency: <span id="diag-ping" class="text-emerald-300">12 ms</span></div>
+                <div>Playback Drift: <span id="diag-drift" class="text-amber-300">0 ms</span></div>
+                <div>Propagation Speed: <span id="diag-prop" class="text-pink-300">&le; 250 ms</span></div>
+            </div>
+
+            <div class="theme-card p-3.5 rounded-2xl border border-rose-100 shadow-sm flex flex-col gap-3">
+                <h2 class="text-sm font-bold text-rose-600">🎬 Movie Discovery (Fuzzy Search)</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="search-input" placeholder="Search titles (e.g. Oceans, Sintel)..." class="bg-rose-50/50 border border-rose-200 px-3 py-1.5 rounded-xl text-xs w-full focus:outline-none text-slate-700">
+                    <button onclick="fetchMovies()" class="bg-purple-400 hover:bg-purple-500 text-white font-medium px-4 py-1.5 rounded-xl text-xs transition">Search</button>
+                </div>
+                <div id="catalog-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+            </div>
+        </main>
+
+        <!-- RIGHT CHAT COLLAPSIBLE BUBBLE / POPUP -->
+        <div class="fixed right-4 bottom-6 z-40 flex flex-col items-end">
+            <!-- Floating Bubble Trigger -->
+            <button id="right-chat-bubble" onclick="toggleChat('right')" class="bg-purple-400 hover:bg-purple-500 text-white p-3.5 rounded-full shadow-lg border-2 border-white flex items-center gap-2 transition hover:scale-110">
+                <span class="text-xl">⚡</span>
+                <span class="text-xs font-bold pr-1">Activity Stream</span>
+            </button>
+
+            <!-- Floating Popup Window -->
+            <aside id="right-chat-panel" class="hidden w-80 h-96 theme-card rounded-3xl border-2 border-purple-200 shadow-2xl flex flex-col overflow-hidden absolute bottom-16 right-0">
+                <div class="bg-purple-100/90 p-3 border-b border-purple-200 text-xs font-bold text-purple-600 flex justify-between items-center">
+                    <span>⚡ Activity Stream</span>
+                    <button onclick="toggleChat('right')" class="text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
+                </div>
+                <div id="right-chat-messages" class="flex-1 p-3 overflow-y-auto text-xs space-y-2"></div>
+                <div class="p-2.5 bg-purple-50/80 border-t border-purple-100 flex gap-2">
+                    <input type="text" id="right-chat-input" placeholder="Activity notes..." class="bg-white border border-purple-200 px-3 py-1.5 rounded-xl text-xs w-full focus:outline-none text-slate-700" onkeydown="if(event.key==='Enter') sendChat('right')">
+                    <button onclick="sendChat('right')" class="bg-purple-400 hover:bg-purple-500 text-white font-medium px-3 py-1.5 rounded-xl text-xs transition">Send</button>
+                </div>
+            </aside>
+        </div>
+
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
